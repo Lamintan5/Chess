@@ -1,5 +1,12 @@
 
 
+
+// Middleware
+app.use(express.json());
+app.use("/api", routes);
+app.use("/uploads", express.static("uploads"));
+const clients = {};
+
 io.on("connection", (socket) => {
     // console.log(socket.id, "has joined");
 
