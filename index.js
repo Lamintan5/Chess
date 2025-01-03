@@ -16,7 +16,6 @@ app.use("/uploads", express.static("uploads"));
 const clients = {};
 
 io.on("connection", (socket) => {
-    console.log("connected");
     // console.log(socket.id, "has joined");
 
     socket.on("signin", (id) => {
@@ -31,19 +30,6 @@ io.on("connection", (socket) => {
         // console.log("Connected clients:", clients);
     });
 
-    socket.on("pay", (pay)=>{
-      console.log(pay);
-      let targetId = pay.targetId;
-
-      if(clients[targetId]){
-         clients[targetId].emit("pay", pay); 
-         console.log(`Pay response sent ${targetId}`);
-      } else {
-        console.log(`User ${targetId} not found`);
-      }
-      
-    });
-    
     socket.on("message", (msg)=>{
         console.log(msg);
         let targetId = msg.targetId;
@@ -191,6 +177,26 @@ io.on("connection", (socket) => {
         });
     });
 
+    // Game
+    // Join Game Room
+    socket.on('join-room', (data, callback) => {
+        let room = data.room;
+        let user = data.user;
+        let time = data.time;
+
+        socket.join(room);
+        callback(`User ${user['uid']} has joined room ${room}`);
+
+        io.emit('room-created', {
+            room: room,
+            user: user,
+            time: time,
+            message: `User ${user['uid']} successfully joined room ${room}`
+        });
+
+    });
+    
+
     socket.on("disconnect", (_) => {
         console.log("Disconnected. Reconnecting :", new Date().toLocaleTimeString().substring(0, 5));
     });
@@ -199,7 +205,7 @@ io.on("connection", (socket) => {
         console.log("Connection error: ", err);
     });
 
-    console.log(`${socket.connected}: ${new Date().toLocaleTimeString().substring(0, 5)}`);
+    console.log(`Connect ${socket.connected}: ${new Date().toLocaleTimeString().substring(0, 5)}`);
 });
 
 
