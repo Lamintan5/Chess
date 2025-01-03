@@ -1,19 +1,4 @@
-const { ONE_SIGNAL_CONFIG } = require("./config/app.config.js")
-const pushNotificationService = require("./services/push-notification.services.js");
-const express = require("express");
-const http = require("http");
-const app = express();
-const port = process.env.PORT || 3000;
-const server = http.createServer(app);
-const io = require("socket.io")(server);
-const routes = require("./routes");
 
-
-// Middleware
-app.use(express.json());
-app.use("/api", routes);
-app.use("/uploads", express.static("uploads"));
-const clients = {};
 
 io.on("connection", (socket) => {
     // console.log(socket.id, "has joined");
@@ -208,11 +193,3 @@ io.on("connection", (socket) => {
     console.log(`Connect ${socket.connected}: ${new Date().toLocaleTimeString().substring(0, 5)}`);
 });
 
-
-app.route("/check").get((req, res) => {
-    return res.json("Your app is working fine");
-});
-
-server.listen(port, "0.0.0.0", () => {
-    console.log("server started");
-});
