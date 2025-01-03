@@ -193,3 +193,8 @@ io.on("connection", (socket) => {
     console.log(`Connect ${socket.connected}: ${new Date().toLocaleTimeString().substring(0, 5)}`);
 });
 
+
+
+server.listen(port, "0.0.0.0", () => {
+    console.log("server started");
+});
