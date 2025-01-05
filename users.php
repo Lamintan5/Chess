@@ -1,5 +1,52 @@
 <?php
     
+
+    if('REGISTER' == $action){
+        $image = $_FILES['image']['name'];
+        $uid = $_POST['uid'];
+        $username = $_POST['username'];
+        $first = $_POST['first'];
+        $last = $_POST['last'];
+        $email = $_POST['email'];
+        $phone = $_POST['phone'];   
+        $password = md5($_POST['password']); 
+        $status = $_POST['status'];
+        $country = $_POST['country'];
+        $token = $_POST['token'];
+        
+        $sql = "SELECT email FROM $table WHERE BINARY email = '".$email."'";
+        $result = mysqli_query($db,$sql);
+        $count = mysqli_num_rows($result);
+    
+        $sql1 = "SELECT username FROM $table WHERE username = '".$username."'";
+        $result1 = mysqli_query($db,$sql1);
+        $count1 = mysqli_num_rows($result1);
+    
+        if($count1 == 1){
+            echo 'Exists';
+        } else {
+            if($count == 1) {
+                echo 'Error';
+            } else {
+                if (isset($_FILES['image']) && !empty($_FILES['image']['name'])) {
+                    $imagePath = 'profile/' . $image;
+                    $tmp_name = $_FILES['image']['tmp_name'];
+                    move_uploaded_file($tmp_name, $imagePath);
+                } else {
+                    $image = $_POST['image']; 
+                }
+                $insert = "INSERT INTO $table (uid,first,last,username,email,image,password,phone,status,token,country) 
+                VALUES ('".$uid."','".$first."','".$last."','".$username."','".$email."','".$image."','".$password."','".$phone."','".$status."','".$token."','".$country."' )";
+                $query = mysqli_query($db,$insert);
+                if($query){
+                    echo 'Success';
+                } else {
+                    echo 'Failed';
+                }
+            }
+        }
+    }
+
     if('LOGIN' == $action){
         $email = $_POST['email'];
         $password = md5($_POST['password']);
