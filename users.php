@@ -1,5 +1,8 @@
 <?php
     
+    if ($conn->connect_error) {
+        die("Connection failed: " . $conn->connect_error);
+    }
 
     if('REGISTER' == $action){
         $image = $_FILES['image']['name'];
