@@ -1,5 +1,10 @@
 <?php
-    
+    $servername = "localhost";
+    $username = "root";
+    $password = "";
+    $dbname = "chess";
+    $table = "users";
+
     $action = $_POST['action'];
     $db = mysqli_connect('localhost','root','','chess');
     $conn = new mysqli($servername, $username, $password, $dbname);
