@@ -1,5 +1,18 @@
 <?php
     
+    if('LOGIN' == $action){
+        $email = $_POST['email'];
+        $password = md5($_POST['password']);
+        $sql = "SELECT *FROM $table WHERE BINARY  email = '".$email."' AND BINARY password = '".$password."'" ;
+        $result = mysqli_query($db,$sql);
+        $count = mysqli_num_rows($result);
+        if($count == 1) {
+            echo json_encode("Success");
+        } else {
+            echo json_encode("Error");
+        }
+    }
+
     if('LOGIN_EMAIL' == $action){
         $email = $_POST['email'];
         $sql = "SELECT *FROM $table WHERE BINARY  email = '".$email."'" ;
