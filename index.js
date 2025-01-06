@@ -13,7 +13,9 @@ const routes = require("./routes");
 app.use(express.json());
 app.use("/api", routes);
 app.use("/uploads", express.static("uploads"));
+
 const clients = {};
+const roomMetadata = [];
 
 io.on("connection", (socket) => {
     // console.log(socket.id, "has joined");
@@ -180,23 +182,72 @@ io.on("connection", (socket) => {
     // Game
     // Join Game Room
     socket.on('join-room', (data, callback) => {
-        let room = data.room;
-        let user = data.user;
-        let time = data.time;
-
+        const room = data.room;
+        const user = data.user;
+        const time = data.time;
+    
+        // Find room metadata
+        let roomData = roomMetadata.find((meta) => meta.room === room);
+    
+        if (!roomData) {
+            // If room does not exist, create it
+            roomData = {
+                room: room,
+                players: [],
+                audience: [],
+                time: time
+            };
+            roomMetadata.push(roomData);
+        }
+    
+        // Check if user exists in players
+        const userExistsInPlayers = roomData.players.some(
+            (player) => player.uid === user.uid
+        );
+    
+        if (!userExistsInPlayers) {
+            if (roomData.players.length < 2) {
+                // Add user to players if there are less than 2 players
+                roomData.players.push(user);
+            } else {
+                // Add user to audience if players already has 2 users
+                roomData.audience.push(user);
+            }
+        }
+    
+        // Join the socket room
         socket.join(room);
-        callback(`User ${user['uid']} has joined room ${room}`);
+        
+        const roomClients = io.sockets.adapter.rooms.get(room);
+        const clientsArray = roomClients ? Array.from(roomClients) : [];
+    
+        // Callback response
+        callback({
+            room: room,
+            players: roomData.players,
+            audience: roomData.audience,
+            success: true,
+            message: `User ${user.username} joined room ${room}`
+        });
 
         io.emit('room-created', {
             room: room,
-            user: user,
+            players: roomData.players,
+            audience: roomData.audience,
             time: time,
-            message: `User ${user['uid']} successfully joined room ${room}`
+            message: `User ${user.username} successfully joined room ${room}`
         });
 
+        socket.broadcast.to(room).emit('room-joined', {
+            room: room,
+            user:user,
+            time: time,
+        });
+    
+        console.log(`Room metadata updated for room ${room}:`, roomData);
+        console.log(`Clients to room ${room}:`, roomClients);
     });
     
-
     socket.on("disconnect", (_) => {
         console.log("Disconnected. Reconnecting :", new Date().toLocaleTimeString().substring(0, 5));
     });
