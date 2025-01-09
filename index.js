@@ -3,19 +3,24 @@ const pushNotificationService = require("./services/push-notification.services.j
 const express = require("express");
 const http = require("http");
 const app = express();
+const routes = require("./routes");
 const port = process.env.PORT || 3000;
 const server = http.createServer(app);
 const io = require("socket.io")(server);
-const routes = require("./routes");
-
+const md5 = require("md5");
 
 // Middleware
 app.use(express.json());
 app.use("/api", routes);
 app.use("/uploads", express.static("uploads"));
+app.use("/profile", express.static("profile"));
+
 
 const clients = {};
 const roomMetadata = [];
+const movements = [];
+const mysql = require('mysql2');
+
 
 io.on("connection", (socket) => {
     // console.log(socket.id, "has joined");
@@ -204,16 +209,18 @@ io.on("connection", (socket) => {
         const userExistsInPlayers = roomData.players.some(
             (player) => player.uid === user.uid
         );
-    
-        if (!userExistsInPlayers) {
-            if (roomData.players.length < 2) {
-                // Add user to players if there are less than 2 players
+
+        if (roomData.players.length < 2) {
+            // Add user to players if there are less than 2 players
+            if (!userExistsInPlayers) {
                 roomData.players.push(user);
-            } else {
-                // Add user to audience if players already has 2 users
-                roomData.audience.push(user);
-            }
+            } 
+            
+        } else {
+            // Add user to audience if players already has 2 users
+            roomData.audience.push(user);
         }
+    
     
         // Join the socket room
         socket.join(room);
@@ -244,8 +251,47 @@ io.on("connection", (socket) => {
             time: time,
         });
     
-        console.log(`Room metadata updated for room ${room}:`, roomData);
-        console.log(`Clients to room ${room}:`, roomClients);
+        // console.log(`Room metadata updated for room ${room}:`, roomData);
+        // console.log(`Clients to room ${room}:`, roomClients);
+    });
+
+    socket.on('move', (move) => {
+        let room = move.room;
+        let row = move.row;
+        let col = move.col;
+        let piece = move.piece;
+        let isWhite = move.isWhite;
+        let uid = move.uid;
+        let action = move.action;
+        let time = move.time;
+        
+        
+
+        socket.broadcast.to(room).emit('on-move', {
+            room:room,
+            row:row,
+            col:col,
+            piece:piece,
+            isWhite:isWhite,
+            uid:uid,
+            action:action,
+            time:time
+        });
+
+    });
+
+    socket.on('rematch', (data) => {
+        let room = data.room;
+        let uid = data.uid;
+        let action = data.action;
+        let time = data.time; 
+
+        socket.broadcast.to(room).emit('on-rematch', {
+            room:room,
+            uid:uid,
+            action:action,
+            time:time
+        });
     });
     
     socket.on("disconnect", (_) => {
@@ -257,6 +303,111 @@ io.on("connection", (socket) => {
     });
 
     console.log(`Connect ${socket.connected}: ${new Date().toLocaleTimeString().substring(0, 5)}`);
+});
+
+const db = require('./config/db');
+
+app.use(express.urlencoded({ extended: true })); 
+const multer = require("multer");
+const upload = multer({ dest: "profile/" });
+
+app.post("/register", upload.single("image"), async (req, res) => {
+    try {
+        const {
+            uid, username, first, last, email, phone, password, status, token, country
+        } = req.body;
+
+        const [existingUser] = await db.execute(
+            "SELECT username FROM users WHERE username = ?",
+            [username]
+        );
+
+        // Check if the email already exists
+        const [existingEmail] = await db.execute(
+            "SELECT email FROM users WHERE email = ?",
+            [email]
+        );
+
+        if (existingUser.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Exists",
+            });
+        }
+
+        if (existingEmail.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Error",
+            });
+        }
+
+        // Process the image
+        const image = req.file ? req.file.filename : "";
+
+        // Insert new user into the database
+        const sql = `
+            INSERT INTO users 
+            (uid, username, first, last, email, phone, password, image, status, token, country) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        const values = [uid, username, first, last, email, phone, password, image, status, token, country];
+
+        const [result] = await db.execute(sql, values);
+
+        res.status(201).json({
+            success: true,
+            image: image,
+            message: `Success`,
+            
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ 
+            success: false,
+             message: "Failed" });
+    }
+});
+
+// Handle login route
+app.post('/login', (req, res) => {
+    const { email, password } = req.body;
+    const hashedPassword = md5(password); 
+
+    const sql = `SELECT * FROM users WHERE BINARY email = '${email}' AND BINARY password = '${hashedPassword}'`;
+
+    const db1 = mysql.createPool({
+        host: '0.0.0.0',
+        user: 'root',
+        password: '',
+        database: 'chess',
+    });
+
+    db1.query(sql, (err, result) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).json({
+                success: false,
+                message: "Database query failed"
+            });
+        }
+
+        if (result.length === 1) {
+            // Assuming 'result[0]' contains the user data
+            const user = result[0]; // The first (and only) result from the query
+
+            return res.json({
+                success: true,
+                message: "User login successfully",
+                user: user  // Sending the user data as part of the response
+            });
+        } else {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid credentials"
+            });
+        }
+    });
 });
 
 
