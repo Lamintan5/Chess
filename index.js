@@ -335,7 +335,13 @@ io.on("connection", (socket) => {
             console.log(`User ${uid} not found in room ${room}`);
         }
 
-        
+        // Broadcast updated room metadata to all clients in the room
+        io.emit('room-updated', {
+            room: room,
+            players: roomData.players,
+            audience: roomData.audience,
+            message: `User ${uid} exited room ${room}`,
+        });
     });
 
     
