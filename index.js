@@ -311,7 +311,11 @@ io.on("connection", (socket) => {
             (player) => player.uid === uid
         );
 
-        
+        const userExistsInAudience = roomData.audience.some(
+            (audience) => audience.uid === uid
+        );
+
+       
     });
 
     
