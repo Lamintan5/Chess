@@ -315,7 +315,27 @@ io.on("connection", (socket) => {
             (audience) => audience.uid === uid
         );
 
-       
+        if (userExistsInPlayers) {
+            roomData.players = roomData.players.filter((player) => player.uid !== uid);
+            console.log(`User ${uid} removed from players in room ${room}`);
+            // Check if there are no players left
+            if (roomData.players.length === 0) {
+                // Remove room metadata
+                roomMetadata.splice(roomMetadata.indexOf(roomData), 1);
+                console.log(`Room ${room} removed from roomMetadata`);
+
+                // Remove all sockets from the room
+                io.in(room).socketsLeave(room);
+                console.log(`Room ${room} removed from socket rooms`);
+            }
+        } else if (userExistsInAudience) {
+            roomData.audience = roomData.audience.filter((audience) => audience.uid !== uid);
+            console.log(`User ${uid} removed from audience in room ${room}`);
+        } else {
+            console.log(`User ${uid} not found in room ${room}`);
+        }
+
+        
     });
 
     
