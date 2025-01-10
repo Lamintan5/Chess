@@ -295,7 +295,14 @@ io.on("connection", (socket) => {
     });
 
     socket.on('exit-room', (data) => {
-       
+        let room = data.room;
+        let uid = data.uid;
+        let action = data.action;
+        let time = data.time; 
+
+        let roomData = roomMetadata.find((meta) => meta.room === room);
+
+        
     });
 
     
