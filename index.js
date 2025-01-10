@@ -302,6 +302,11 @@ io.on("connection", (socket) => {
 
         let roomData = roomMetadata.find((meta) => meta.room === room);
 
+        if (!roomData) {
+            console.log(`Room ${room} not found.`);
+            return;
+        }
+
         
     });
 
