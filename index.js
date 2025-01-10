@@ -307,6 +307,10 @@ io.on("connection", (socket) => {
             return;
         }
 
+        const userExistsInPlayers = roomData.players.some(
+            (player) => player.uid === uid
+        );
+
         
     });
 
