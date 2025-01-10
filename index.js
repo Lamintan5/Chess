@@ -293,6 +293,11 @@ io.on("connection", (socket) => {
             time:time
         });
     });
+
+    socket.on('exit-room', (data) => {
+       
+    });
+
     
     socket.on("disconnect", (_) => {
         console.log("Disconnected. Reconnecting :", new Date().toLocaleTimeString().substring(0, 5));
